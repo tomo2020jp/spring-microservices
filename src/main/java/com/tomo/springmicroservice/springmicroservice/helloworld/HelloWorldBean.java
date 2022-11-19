@@ -1,4 +1,4 @@
-package com.tomo.springmicroservice.springmicroservice;
+package com.tomo.springmicroservice.springmicroservice.helloworld;
 
 public class HelloWorldBean {
 
