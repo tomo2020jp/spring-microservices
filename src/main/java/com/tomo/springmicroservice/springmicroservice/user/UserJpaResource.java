@@ -1,5 +1,6 @@
 package com.tomo.springmicroservice.springmicroservice.user;
 
+import com.tomo.springmicroservice.springmicroservice.jpa.PostRepository;
 import com.tomo.springmicroservice.springmicroservice.jpa.UserRepository;
 import org.hibernate.EntityMode;
 import org.springframework.hateoas.EntityModel;
@@ -17,9 +18,11 @@ import java.util.Optional;
 @RestController
 public class UserJpaResource {
     private final UserRepository repository;
+    private final PostRepository postRepository;
 
-    public UserJpaResource(UserRepository repository) {
+    public UserJpaResource(UserRepository repository, PostRepository postRepository) {
         this.repository = repository;
+        this.postRepository = postRepository;
     }
 
     @GetMapping("/jpa/users")
@@ -63,9 +66,26 @@ public class UserJpaResource {
     public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
         User savedUser = repository.save(user);
 
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedUser.getId()).toUri();
+
+        return ResponseEntity.created(location).build();
+    }
+
+    @PostMapping("/jpa/users/{id}/posts")
+    public ResponseEntity<Object> createPostForUser(@PathVariable int id, @Valid @RequestBody Post post) {
+        Optional<User> user = repository.findById(id);
+
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("id:" + id);
+        }
+
+        post.setUser(user.get());
+
+        Post savedPost = postRepository.save(post);
+
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(savedUser.getId())
+                .buildAndExpand(savedPost.getId())
                 .toUri();
 
         return ResponseEntity.created(location).build();
